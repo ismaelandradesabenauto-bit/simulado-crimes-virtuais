@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#eef3f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c161d" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Simulado">
+<meta name="description" content="Simulado interativo sobre crimes virtuais e cidadania digital — UNAMA Rio Branco, Projeto EJA.">
+<title>Simulado Crimes Virtuais</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d6e8a'/%3E%3Cpath d='M32 12l16 6v12c0 11-7 19-16 22-9-3-16-11-16-22V18z' fill='none' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M25 32l5 5 9-10' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: coluna única centrada; no celular, barra de ação fixa no rodapé respeitando a área segura */
+:root{
+  --bg:#eef3f6; --surface:#ffffff; --ink:#13232e; --muted:#5a6d78; --line:#d3dee5;
+  --accent:#0d6e8a; --accent-ink:#ffffff; --accent-soft:#dcedf3;
+  --ok:#1f7a4a; --ok-soft:#dff2e7; --bad:#b3362b; --bad-soft:#f8e1de; --gold:#b97a0b;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,-apple-system,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0c161d; --surface:#132430; --ink:#e4eef3; --muted:#93a8b4; --line:#24394a;
+  --accent:#4fb6d4; --accent-ink:#06202a; --accent-soft:#16384a;
+  --ok:#5fd394; --ok-soft:#133a28; --bad:#f08a7e; --bad-soft:#3f1d1a; --gold:#e8b14a; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;
+  -webkit-tap-highlight-color:transparent;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:calc(24px + var(--sat));padding-bottom:calc(40px + var(--sab))}
+button,input,textarea,select{font:inherit;color:inherit}
+button{touch-action:manipulation}
+[hidden]{display:none!important}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,7.5vw,42px);line-height:1.08;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:60ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:16px;min-width:0}
+h2{font-family:var(--display);font-weight:600;font-size:21px;line-height:1.25;margin:0;text-wrap:balance}
+h3{font-family:var(--display);font-weight:600;font-size:18px;margin:0}
+.stem{margin:0;color:var(--muted)}
+label.f{font-weight:600;font-size:15px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+input[type=text],input[type=password],textarea{font-size:17px;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);width:100%;-webkit-appearance:none;appearance:none}
+textarea{resize:vertical;min-height:84px;line-height:1.45}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+input[aria-invalid=true]{border-color:var(--bad)}
+.btn{font-weight:700;border:0;border-radius:12px;min-height:50px;padding:12px 22px;cursor:pointer;background:var(--accent);color:var(--accent-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.danger{background:var(--bad);color:var(--surface)}
+.btn.ghost.danger{background:transparent;color:var(--bad);border-color:var(--bad)}
+.btn.sm{min-height:40px;padding:8px 14px;font-size:15px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.opt:focus-visible,.tab:focus-visible,.ibtn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.msg{font-size:15px;color:var(--bad);margin:0}
+.msg.ok{color:var(--ok)}
+.muted{color:var(--muted);font-size:15px}
+.rail{display:flex;gap:5px}
+.rail span{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.rail span.done-ok{background:var(--ok)} .rail span.done-bad{background:var(--bad)} .rail span.cur{background:var(--accent)}
+.qmeta{display:flex;justify-content:space-between;gap:6px 12px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;gap:14px;align-items:flex-start;text-align:left;background:var(--bg);border:1.5px solid var(--line);border-radius:14px;padding:14px;min-height:56px;cursor:pointer;transition:border-color .15s,background .15s;width:100%}
+@media (hover:hover){.opt:hover:not(:disabled){border-color:var(--accent)}}
+.opt .k{flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:500;background:var(--surface);border:1px solid var(--line)}
+.opt .t{padding-top:3px;min-width:0;overflow-wrap:anywhere}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)} .opt.right .k{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)} .opt.wrong .k{background:var(--bad);color:var(--surface);border-color:var(--bad)}
+.opt:disabled{cursor:default;color:var(--ink);opacity:1}
+.fb{border-left:4px solid var(--ok);background:var(--ok-soft);padding:12px 16px;border-radius:0 12px 12px 0;scroll-margin-bottom:120px}
+.fb.bad{border-color:var(--bad);background:var(--bad-soft)}
+.fb strong{display:block;margin-bottom:2px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.score{font-family:var(--display);font-weight:800;font-size:64px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.review{display:flex;flex-direction:column;padding:0;margin:0;list-style:none}
+.review li{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.review .mark{flex:none;font-family:var(--mono);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--surface);font-size:14px}
+.review .mark.ok{background:var(--ok)} .review .mark.no{background:var(--bad)}
+.review p{margin:0} .review small{color:var(--muted);font-size:14px;display:block}
+.tip{font-size:15px;color:var(--muted);margin:4px 0 0}
+/* Ranking */
+.rank-head{display:flex;justify-content:space-between;align-items:baseline;gap:6px 12px;flex-wrap:wrap}
+.rlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rlist li{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:11px 8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.rlist li:first-child{border-top:0}
+.rlist li.me{background:var(--accent-soft);border-radius:10px}
+.pos{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;font-family:var(--mono);font-size:14px;border:1px solid var(--line)}
+.p1 .pos{background:var(--gold);border-color:var(--gold);color:var(--surface)}
+.p2 .pos,.p3 .pos{background:var(--accent-soft);border-color:var(--accent)}
+.rn{min-width:0}
+.rn strong{display:block;overflow-wrap:anywhere;line-height:1.3}
+.rn small{color:var(--muted);font-size:13px}
+.you{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-left:6px}
+.hits{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.hits strong{font-size:17px}
+.dots{display:flex;gap:3px}.dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}.dots i.on{background:var(--ok)}
+/* Admin */
+.tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:5px}
+.tab{flex:1;border:0;background:transparent;border-radius:10px;min-height:44px;font-weight:700;color:var(--muted);cursor:pointer}
+.tab[aria-selected=true]{background:var(--accent);color:var(--accent-ink)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.alist{list-style:none;margin:0;padding:0}
+.alist li{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.alist .who{min-width:0}.alist .who strong{display:block;overflow-wrap:anywhere}
+.alist small{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.qed{border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
+.qed-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.qed-head .n{font-family:var(--mono);font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.ibtns{display:flex;gap:6px}
+.ibtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;font-size:16px}
+.ibtn:disabled{opacity:.35}
+.ibtn.del{color:var(--bad)}
+.altrow{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+.altrow input[type=radio]{width:24px;height:24px;accent-color:var(--ok);margin:0}
+.altrow input[type=text]{padding:10px 12px}
+.hint{font-size:13px;color:var(--muted)}
+.sticky{position:sticky;bottom:0;z-index:5;background:var(--bg);padding:12px 0 calc(12px + var(--sab));border-top:1px solid var(--line)}
+footer{font-size:13px;color:var(--muted);text-align:center}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:g .8s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+/* Celular: botões largos e ação principal fixa no rodapé */
+@media (max-width:600px){
+  body{font-size:16.5px}
+  .card{padding:18px;border-radius:14px}
+  .actions .btn{flex:1 1 100%}
+  .qactions{position:sticky;bottom:0;z-index:5;margin:0 -18px -18px;padding:12px 18px calc(12px + var(--sab));background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 14px 14px}
+  .score{font-size:56px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">UNAMA Rio Branco · Projeto EJA</span>
+    <h1>Crimes Virtuais e Cidadania Digital</h1>
+    <p class="sub" id="sub">Informação também é proteção. Responda às questões sobre segurança na internet e veja na hora se acertou, com o comentário de cada resposta.</p>
+  </header>
+  <main id="app"></main>
+  <section class="card" id="rank" aria-labelledby="rank-h">
+    <div class="rank-head"><h2 id="rank-h">Ranking da turma</h2><span class="muted" id="rank-info">Carregando…</span></div>
+    <ol class="rlist" id="rank-list"></ol>
+    <p class="muted" id="rank-empty" hidden>Ninguém terminou o simulado ainda. O primeiro resultado aparece aqui assim que alguém concluir.</p>
+  </section>
+  <footer>Curso de Direito — Atividades Práticas Interdisciplinares de Extensão II</footer>
+</div>
+<script>
+const DADOS = "__DADOS__";
+const QS = (typeof DADOS === "object" && DADOS && Array.isArray(DADOS.questoes)) ? DADOS.questoes : [];
+const VERSAO = (typeof DADOS === "object" && DADOS) ? DADOS.versao : 0;
+const L = "ABCDEF";
+const $ = (id) => document.getElementById(id);
+const app = $("app");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtData = (t) => { const d = new Date(t); return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"}) + " " + d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}); };
+const store = { get(k){ try { return sessionStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { v==null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k,v); } catch(e){} } };
+const topo = () => window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+const ADMIN = location.pathname.replace(/\/+$/, "") === "/admin";
+
+/* ================= Simulado ================= */
+let st = { name: store.get("nome") || "", i: 0, ans: [], picked: null, checked: false };
+let mine = "";
+
+function start() {
+  $("sub").textContent = `Informação também é proteção. Responda às ${QS.length} questões sobre segurança na internet e veja na hora se acertou, com o comentário de cada resposta.`;
+  app.innerHTML = `<section class="card">
+    <h2>Antes de começar</h2>
+    <p class="stem">Digite seu nome para aparecer no ranking. São ${QS.length} questões de múltipla escolha.</p>
+    <div class="field"><label class="f" for="nome">Nome do aluno(a)</label>
+    <input type="text" id="nome" autocomplete="name" autocapitalize="words" enterkeyhint="go" maxlength="60" placeholder="Ex.: Maria da Silva" value="${esc(st.name)}"></div>
+    <p class="msg" id="nome-msg" hidden>Digite seu nome (pelo menos 2 letras) para entrar no ranking.</p>
+    <div class="actions"><button class="btn" id="go">Começar simulado</button></div>
+  </section>`;
+  const n = $("nome");
+  n.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  $("go").onclick = go;
+  function go() {
+    const v = n.value.trim().replace(/\s+/g, " ").slice(0, 60);
+    if (v.length < 2) { n.setAttribute("aria-invalid", "true"); $("nome-msg").hidden = false; n.focus(); return; }
+    n.blur();
+    st.name = v; store.set("nome", v);
+    st.i = 0; st.ans = []; st.picked = null; st.checked = false;
+    question(); topo();
+  }
+}
+
+function rail() {
+  return `<div class="rail" aria-hidden="true">${QS.map((_, k) => {
+    if (k < st.ans.length) return `<span class="${st.ans[k] === QS[k].correta ? "done-ok" : "done-bad"}"></span>`;
+    return `<span class="${k === st.i ? "cur" : ""}"></span>`;
+  }).join("")}</div>`;
+}
+
+function question() {
+  const q = QS[st.i];
+  app.innerHTML = `<section class="card">
+    ${rail()}
+    <div class="qmeta"><span>Questão ${st.i + 1} de ${QS.length}</span>${q.tema ? `<span>${esc(q.tema)}</span>` : ""}</div>
+    ${q.contexto ? `<p class="stem">${esc(q.contexto)}</p>` : ""}
+    <h2>${esc(q.pergunta)}</h2>
+    <div class="opts" role="radiogroup" aria-label="Alternativas">${q.alternativas.map((o, k) =>
+      `<button class="opt" role="radio" aria-checked="false" data-k="${k}"><span class="k">${L[k]}</span><span class="t">${esc(o)}</span></button>`).join("")}</div>
+    <div id="fb"></div>
+    <div class="actions qactions"><button class="btn" id="act" disabled>Escolha uma alternativa</button></div>
+  </section>`;
+  const opts = [...app.querySelectorAll(".opt")], act = $("act");
+  opts.forEach((b) => b.onclick = () => {
+    if (st.checked) return;
+    st.picked = +b.dataset.k;
+    opts.forEach((x) => { x.classList.toggle("sel", x === b); x.setAttribute("aria-checked", x === b); });
+    act.disabled = false; act.textContent = "Confirmar resposta";
+  });
+  act.onclick = () => {
+    if (!st.checked) {
+      st.checked = true; st.ans.push(st.picked);
+      const ok = st.picked === q.correta;
+      opts.forEach((x, k) => { x.disabled = true; x.classList.remove("sel"); if (k === q.correta) x.classList.add("right"); else if (k === st.picked) x.classList.add("wrong"); });
+      $("fb").innerHTML = `<div class="fb ${ok ? "" : "bad"}" role="status"><strong>${ok ? "Você acertou!" : "Resposta incorreta. A certa é a letra " + L[q.correta] + "."}</strong>${esc(q.comentario)}</div>`;
+      app.querySelector(".rail").outerHTML = rail();
+      act.textContent = st.i < QS.length - 1 ? "Próxima questão" : "Ver meu resultado";
+      requestAnimationFrame(() => $("fb").firstElementChild.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+    } else {
+      st.i++; st.picked = null; st.checked = false;
+      st.i < QS.length ? question() : result();
+      topo();
+    }
+  };
+}
+
+function result() {
+  const hits = st.ans.filter((a, k) => a === QS[k].correta).length;
+  const pct = hits / QS.length;
+  const msg = pct === 1 ? "Excelente! Você domina o assunto e está preparado para se proteger na internet."
+    : pct >= 0.6 ? "Muito bem! Revise as questões que errou para reforçar sua proteção."
+    : "Vale a pena revisar o conteúdo. Leia os comentários abaixo com atenção.";
+  app.innerHTML = `<section class="card">
+    ${rail()}
+    <span class="eyebrow">Resultado de ${esc(st.name)} · ${fmtData(Date.now())}</span>
+    <div class="score">${hits}/${QS.length}</div>
+    <p class="stem">${msg}</p>
+    <p class="muted" id="saved" role="status">Enviando seu resultado para o ranking…</p>
+    <div class="actions"><button class="btn" id="again">Refazer simulado</button><button class="btn ghost" id="other">Novo aluno</button></div>
+    <ul class="review">${QS.map((q, k) => { const ok = st.ans[k] === q.correta; return `<li><span class="mark ${ok ? "ok" : "no"}">${ok ? "✓" : "✗"}</span><div><p><strong>${k + 1}. ${esc(q.tema || q.pergunta)}</strong></p><small>Sua resposta: ${L[st.ans[k]]} · Correta: ${L[q.correta]}</small><p class="tip">${esc(q.comentario)}</p></div></li>`; }).join("")}</ul>
+  </section>`;
+  $("again").onclick = () => { st.i = 0; st.ans = []; st.picked = null; st.checked = false; question(); topo(); };
+  $("other").onclick = () => { st.name = ""; store.set("nome", null); start(); topo(); };
+  enviar(st.name, st.ans.slice());
+}
+
+async function enviar(nome, respostas) {
+  const el = () => $("saved");
+  try {
+    const r = await fetch("/api/resultados", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nome, respostas, versao: VERSAO }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) {
+      mine = nome.toLowerCase();
+      if (el()) { el().textContent = "Seu resultado entrou no ranking da turma."; el().className = "msg ok"; }
+      carregarRanking();
+    } else if (el()) { el().textContent = d.erro || "Não foi possível registrar no ranking."; el().className = "msg"; }
+  } catch (e) {
+    if (el()) { el().innerHTML = `Sem conexão. <button class="btn sm ghost" id="retry">Tentar de novo</button>`; el().className = "msg"; $("retry").onclick = () => { el().textContent = "Enviando…"; enviar(nome, respostas); }; }
+  }
+}
+
+/* ================= Ranking ================= */
+async function carregarRanking() {
+  try {
+    const r = await fetch("/api/ranking", { cache: "no-store" });
+    if (!r.ok) throw 0;
+    desenharRanking(await r.json());
+  } catch (e) { $("rank-info").textContent = "Sem conexão com o ranking"; }
+}
+function desenharRanking(rows) {
+  $("rank-empty").hidden = rows.length > 0;
+  $("rank-info").textContent = rows.length ? `${rows.length} aluno${rows.length > 1 ? "s" : ""} · melhor tentativa` : "";
+  let pos = 0, prev = null;
+  $("rank-list").innerHTML = rows.map((r, i) => {
+    const nota = r.acertos / r.total;
+    if (nota !== prev) { pos = i + 1; prev = nota; }
+    const me = mine && r.nome.toLowerCase() === mine;
+    const dots = r.total <= 12 ? `<span class="dots" aria-hidden="true">${Array.from({ length: r.total }, (_, j) => `<i class="${j < r.acertos ? "on" : ""}"></i>`).join("")}</span>` : "";
+    return `<li class="${pos <= 3 ? "p" + pos : ""} ${me ? "me" : ""}"><span class="pos">${pos}º</span>
+      <span class="rn"><strong>${esc(r.nome)}${me ? '<span class="you">você</span>' : ""}</strong><small>${fmtData(r.data)}</small></span>
+      <span class="hits"><strong>${r.acertos}/${r.total}</strong>${dots}</span></li>`;
+  }).join("");
+}
+
+/* ================= Administrador ================= */
+let senha = store.get("adm") || "";
+let rascunho = [];
+
+async function api(caminho, opcoes = {}) {
+  const r = await fetch(caminho, { ...opcoes, headers: { "content-type": "application/json", authorization: "Bearer " + senha, ...(opcoes.headers || {}) } });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401) { senha = ""; store.set("adm", null); }
+  if (!r.ok) throw Object.assign(new Error(d.erro || "Algo deu errado. Tente de novo."), { status: r.status });
+  return d;
+}
+
+function adminLogin(msg) {
+  $("rank").hidden = true;
+  $("sub").textContent = "Área do professor: edite as questões e gerencie os resultados da turma.";
+  app.innerHTML = `<section class="card">
+    <h2>Entrar como administrador</h2>
+    <div class="field"><label class="f" for="senha">Senha</label>
+    <input type="password" id="senha" autocomplete="current-password" enterkeyhint="go"></div>
+    <p class="msg" id="lmsg" ${msg ? "" : "hidden"}>${esc(msg || "")}</p>
+    <div class="actions"><button class="btn" id="entrar">Entrar</button><a class="btn ghost" href="/">Voltar ao simulado</a></div>
+  </section>`;
+  const s = $("senha"), b = $("entrar");
+  s.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  b.onclick = go;
+  s.focus();
+  async function go() {
+    if (!s.value) return;
+    b.disabled = true; b.textContent = "Entrando…";
+    senha = s.value;
+    try { await api("/api/admin/entrar", { method: "POST" }); store.set("adm", senha); adminPainel("resultados"); }
+    catch (e) { b.disabled = false; b.textContent = "Entrar"; $("lmsg").hidden = false; $("lmsg").textContent = e.message; s.select(); }
+  }
+}
+
+function adminPainel(aba) {
+  $("rank").hidden = true;
+  app.innerHTML = `<div class="wrap" style="gap:16px">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-res" aria-selected="${aba === "resultados"}">Resultados</button>
+      <button class="tab" role="tab" id="t-q" aria-selected="${aba === "questoes"}">Questões</button>
+    </div>
+    <div id="painel"></div>
+    <div class="actions"><a class="btn ghost sm" href="/" target="_blank" rel="noopener">Abrir simulado</a><button class="btn ghost sm" id="sair">Sair</button></div>
+  </div>`;
+  $("t-res").onclick = () => adminPainel("resultados");
+  $("t-q").onclick = () => adminPainel("questoes");
+  $("sair").onclick = () => { senha = ""; store.set("adm", null); adminLogin(); };
+  aba === "resultados" ? adminResultados() : adminQuestoes();
+}
+
+function erroAdmin(e) {
+  if (e.status === 401) return adminLogin("Sua sessão expirou. Digite a senha de novo.");
+  $("painel").innerHTML = `<section class="card"><p class="msg">${esc(e.message)}</p></section>`;
+}
+
+async function adminResultados() {
+  const p = $("painel");
+  p.innerHTML = `<section class="card"><div class="spin" aria-label="Carregando"></div></section>`;
+  let rows;
+  try { rows = await api("/api/admin/resultados"); } catch (e) { return erroAdmin(e); }
+  p.innerHTML = `<section class="card">
+    <div class="bar"><h2>${rows.length} tentativa${rows.length === 1 ? "" : "s"}</h2>
+      <button class="btn danger sm" id="zerar" ${rows.length ? "" : "disabled"}>Zerar ranking</button></div>
+    <div id="zconf" hidden class="fb bad"><strong>Apagar todos os ${rows.length} resultados?</strong>Essa ação não pode ser desfeita.
+      <div class="actions" style="margin-top:10px"><button class="btn danger sm" id="zsim">Sim, apagar tudo</button><button class="btn ghost sm" id="znao">Cancelar</button></div></div>
+    <p class="muted">Todas as tentativas, da mais recente para a mais antiga. O ranking público mostra só a melhor de cada aluno.</p>
+    ${rows.length ? `<ul class="alist">${rows.map((r) => `<li data-id="${r.id}"><span class="who"><strong>${esc(r.nome)}</strong><small>${r.acertos}/${r.total} acertos · ${fmtData(r.data)}</small></span>
+      <button class="btn ghost danger sm" data-del="${r.id}" aria-label="Remover resultado de ${esc(r.nome)}">Remover</button></li>`).join("")}</ul>`
+      : `<p class="muted">Nenhum resultado ainda.</p>`}
+  </section>`;
+  $("zerar").onclick = () => { $("zconf").hidden = false; $("zerar").hidden = true; };
+  $("znao").onclick = () => { $("zconf").hidden = true; $("zerar").hidden = false; };
+  $("zsim").onclick = async () => {
+    $("zsim").disabled = true; $("zsim").textContent = "Apagando…";
+    try { await api("/api/admin/resultados", { method: "DELETE" }); adminResultados(); } catch (e) { erroAdmin(e); }
+  };
+  p.querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => {
+    if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Confirmar"; b.classList.remove("ghost"); setTimeout(() => { if (b.isConnected && b.dataset.armed === "1") { b.dataset.armed = ""; b.textContent = "Remover"; b.classList.add("ghost"); } }, 4000); return; }
+    b.disabled = true; b.textContent = "Removendo…";
+    try { await api("/api/admin/resultados/" + b.dataset.del, { method: "DELETE" }); b.closest("li").remove(); const h = p.querySelector("h2"); const n = p.querySelectorAll(".alist li").length; h.textContent = `${n} tentativa${n === 1 ? "" : "s"}`; }
+    catch (e) { erroAdmin(e); }
+  });
+}
+
+async function adminQuestoes() {
+  const p = $("painel");
+  p.innerHTML = `<section class="card"><div class="spin" aria-label="Carregando"></div></section>`;
+  let d;
+  try { d = await api("/api/admin/questoes"); } catch (e) { return erroAdmin(e); }
+  rascunho = JSON.parse(JSON.stringify(d.questoes));
+  desenharEditor(d.versao);
+}
+
+function lerEditor() {
+  document.querySelectorAll(".qed").forEach((el, i) => {
+    const q = rascunho[i];
+    q.tema = el.querySelector("[data-f=tema]").value;
+    q.contexto = el.querySelector("[data-f=contexto]").value;
+    q.pergunta = el.querySelector("[data-f=pergunta]").value;
+    q.comentario = el.querySelector("[data-f=comentario]").value;
+    q.alternativas = [...el.querySelectorAll("[data-alt]")].map((x) => x.value);
+    const marcada = el.querySelector("input[type=radio]:checked");
+    q.correta = marcada ? +marcada.value : -1;
+  });
+}
+
+function desenharEditor(versao, aviso) {
+  const p = $("painel");
+  p.innerHTML = `<section class="card">
+    <div class="bar"><h2>${rascunho.length} quest${rascunho.length === 1 ? "ão" : "ões"}</h2><button class="btn ghost sm" id="restaurar">Restaurar originais</button></div>
+    <p class="muted">Marque o círculo da alternativa correta. Ao salvar, quem estiver no meio do simulado precisará recarregar a página. ${versao ? "Última alteração: " + fmtData(versao) + "." : "Usando as questões originais do PDF."}</p>
+    <div id="rconf" hidden class="fb bad"><strong>Voltar às 5 questões originais?</strong>Suas questões editadas serão descartadas.
+      <div class="actions" style="margin-top:10px"><button class="btn danger sm" id="rsim">Sim, restaurar</button><button class="btn ghost sm" id="rnao">Cancelar</button></div></div>
+    ${rascunho.map((q, i) => `<div class="qed" data-i="${i}">
+      <div class="qed-head"><span class="n">Questão ${i + 1}</span><span class="ibtns">
+        <button class="ibtn" data-act="up" aria-label="Mover para cima" ${i === 0 ? "disabled" : ""}>↑</button>
+        <button class="ibtn" data-act="down" aria-label="Mover para baixo" ${i === rascunho.length - 1 ? "disabled" : ""}>↓</button>
+        <button class="ibtn del" data-act="del" aria-label="Excluir questão ${i + 1}">✕</button></span></div>
+      <div class="field"><label class="f" for="tm${i}">Tema</label><input type="text" id="tm${i}" data-f="tema" maxlength="80" value="${esc(q.tema)}" placeholder="Ex.: Golpes no WhatsApp"></div>
+      <div class="field"><label class="f" for="cx${i}">Texto de apoio <span class="hint">(opcional)</span></label><textarea id="cx${i}" data-f="contexto" maxlength="600" rows="2">${esc(q.contexto)}</textarea></div>
+      <div class="field"><label class="f" for="pg${i}">Pergunta</label><textarea id="pg${i}" data-f="pergunta" maxlength="600" rows="2">${esc(q.pergunta)}</textarea></div>
+      <div class="field"><span class="f" style="font-weight:600;font-size:15px">Alternativas</span>
+        ${q.alternativas.map((a, k) => `<div class="altrow"><input type="radio" name="c${i}" value="${k}" ${q.correta === k ? "checked" : ""} aria-label="Alternativa ${L[k]} é a correta">
+          <input type="text" data-alt="${k}" maxlength="300" value="${esc(a)}" aria-label="Alternativa ${L[k]}" placeholder="Alternativa ${L[k]}">
+          <button class="ibtn del" data-act="delalt" data-k="${k}" aria-label="Remover alternativa ${L[k]}" ${q.alternativas.length <= 2 ? "disabled" : ""}>✕</button></div>`).join("")}
+        ${q.alternativas.length < 6 ? `<button class="btn ghost sm" data-act="addalt" style="align-self:flex-start">+ Alternativa</button>` : ""}</div>
+      <div class="field"><label class="f" for="cm${i}">Comentário da resposta</label><textarea id="cm${i}" data-f="comentario" maxlength="800" rows="2">${esc(q.comentario)}</textarea></div>
+    </div>`).join("")}
+    <button class="btn ghost" id="addq">+ Adicionar questão</button>
+  </section>
+  <div class="sticky"><div class="actions"><button class="btn" id="salvar">Salvar questões</button></div><p class="msg" id="smsg" ${aviso ? "" : "hidden"} role="status">${esc(aviso || "")}</p></div>`;
+
+  p.querySelectorAll(".qed").forEach((el) => {
+    const i = +el.dataset.i;
+    el.querySelectorAll("[data-act]").forEach((b) => b.onclick = () => {
+      lerEditor();
+      const a = b.dataset.act, q = rascunho[i];
+      if (a === "up") [rascunho[i - 1], rascunho[i]] = [rascunho[i], rascunho[i - 1]];
+      if (a === "down") [rascunho[i + 1], rascunho[i]] = [rascunho[i], rascunho[i + 1]];
+      if (a === "del") {
+        if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "?"; b.setAttribute("aria-label", "Toque de novo para excluir"); return; }
+        rascunho.splice(i, 1);
+      }
+      if (a === "addalt") q.alternativas.push("");
+      if (a === "delalt") { const k = +b.dataset.k; q.alternativas.splice(k, 1); if (q.correta === k) q.correta = -1; else if (q.correta > k) q.correta--; }
+      desenharEditor(versao);
+    });
+  });
+  $("addq").onclick = () => {
+    lerEditor();
+    rascunho.push({ tema: "", contexto: "", pergunta: "", alternativas: ["", "", "", ""], correta: -1, comentario: "" });
+    desenharEditor(versao);
+    const ult = [...document.querySelectorAll(".qed")].pop();
+    ult.scrollIntoView({ block: "start", behavior: "smooth" });
+    ult.querySelector("[data-f=tema]").focus({ preventScroll: true });
+  };
+  $("restaurar").onclick = () => { $("rconf").hidden = false; $("restaurar").hidden = true; };
+  $("rnao").onclick = () => { $("rconf").hidden = true; $("restaurar").hidden = false; };
+  $("rsim").onclick = async () => {
+    try { const d = await api("/api/admin/questoes/restaurar", { method: "POST" }); rascunho = d.questoes; desenharEditor(d.versao, "Questões originais restauradas."); $("smsg").className = "msg ok"; }
+    catch (e) { erroAdmin(e); }
+  };
+  $("salvar").onclick = async () => {
+    lerEditor();
+    const b = $("salvar"), m = $("smsg");
+    b.disabled = true; b.textContent = "Salvando…";
+    try {
+      const d = await api("/api/admin/questoes", { method: "PUT", body: JSON.stringify({ questoes: rascunho }) });
+      rascunho = d.questoes; desenharEditor(d.versao, "Questões salvas. O simulado já está atualizado.");
+      $("smsg").className = "msg ok";
+    } catch (e) {
+      if (e.status === 401) return erroAdmin(e);
+      b.disabled = false; b.textContent = "Salvar questões"; m.hidden = false; m.className = "msg"; m.textContent = e.message;
+    }
+  };
+}
+
+/* ================= Início ================= */
+if (ADMIN) {
+  senha ? adminPainel("resultados") : adminLogin();
+} else if (!QS.length) {
+  app.innerHTML = `<section class="card"><p class="msg">Não foi possível carregar as questões. Recarregue a página.</p></section>`;
+} else {
+  start();
+  carregarRanking();
+  setInterval(() => { if (!document.hidden) carregarRanking(); }, 20000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) carregarRanking(); });
+}
+</script>
+</body>
+</html>

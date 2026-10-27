@@ -1,38 +1,186 @@
-// Simulado Crimes Virtuais — Cloudflare Worker com ranking (KV)
-// Requer um KV namespace ligado ao Worker com o nome de variável RESULTADOS.
-const HTML = "<!doctype html>\n<html lang=\"pt-BR\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n<title>Simulado Crimes Virtuais</title>\n<meta name=\"claude:viewport-fit-sides\" content=\"cover\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap\">\n<style>\n/* Layout: single centered column, one question card at a time, progress rail on top, result screen at end */\n:root{\n  --bg:#eef3f6; --surface:#ffffff; --ink:#13232e; --muted:#5a6d78; --line:#d3dee5;\n  --accent:#0d6e8a; --accent-ink:#ffffff; --accent-soft:#dcedf3;\n  --ok:#1f7a4a; --ok-soft:#dff2e7; --bad:#b3362b; --bad-soft:#f8e1de; --warn:#b97a0b;\n  --display:\"Bricolage Grotesque\", \"Segoe UI\", system-ui, sans-serif;\n  --body:\"Source Sans 3\", \"Segoe UI\", system-ui, sans-serif;\n  --mono:\"JetBrains Mono\", ui-monospace, Consolas, monospace;\n}\n@media (prefers-color-scheme: dark){:root:not([data-theme=\"light\"]){\n  --bg:#0c161d; --surface:#132430; --ink:#e4eef3; --muted:#93a8b4; --line:#24394a;\n  --accent:#4fb6d4; --accent-ink:#06202a; --accent-soft:#16384a;\n  --ok:#5fd394; --ok-soft:#133a28; --bad:#f08a7e; --bad-soft:#3f1d1a; --warn:#e8b14a; color-scheme:dark}}\n:root[data-theme=\"dark\"]{\n  --bg:#0c161d; --surface:#132430; --ink:#e4eef3; --muted:#93a8b4; --line:#24394a;\n  --accent:#4fb6d4; --accent-ink:#06202a; --accent-soft:#16384a;\n  --ok:#5fd394; --ok-soft:#133a28; --bad:#f08a7e; --bad-soft:#3f1d1a; --warn:#e8b14a; color-scheme:dark}\n*{box-sizing:border-box}\nbody{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;\n  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}\n.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:22px}\nheader{display:flex;flex-direction:column;gap:8px}\n.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}\nh1{font-family:var(--display);font-weight:800;font-size:clamp(28px,6vw,42px);line-height:1.08;margin:0;text-wrap:balance}\n.sub{color:var(--muted);margin:0;max-width:60ch}\n.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:16px}\nlabel.f{font-weight:600;font-size:15px}\ninput[type=text]{font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);width:100%}\ninput[type=text]:focus{outline:none;border-color:var(--accent)}\n.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:13px 22px;cursor:pointer;background:var(--accent);color:var(--accent-ink);align-self:flex-start}\n.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}\n.btn:disabled{opacity:.4;cursor:not-allowed}\n.btn:focus-visible,.opt:focus-visible{outline:3px solid var(--warn);outline-offset:2px}\n.rail{display:flex;gap:6px}\n.rail span{flex:1;height:6px;border-radius:3px;background:var(--line)}\n.rail span.done-ok{background:var(--ok)} .rail span.done-bad{background:var(--bad)} .rail span.cur{background:var(--accent)}\n.qmeta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}\nh2{font-family:var(--display);font-weight:600;font-size:22px;line-height:1.25;margin:0;text-wrap:balance}\n.stem{margin:0;color:var(--muted)}\n.opts{display:flex;flex-direction:column;gap:10px}\n.opt{display:flex;gap:14px;align-items:flex-start;text-align:left;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .15s,background .15s}\n.opt:hover:not(:disabled){border-color:var(--accent)}\n.opt .k{flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-weight:500;background:var(--surface);border:1px solid var(--line)}\n.opt.sel{border-color:var(--accent);background:var(--accent-soft)}\n.opt.right{border-color:var(--ok);background:var(--ok-soft)} .opt.right .k{background:var(--ok);color:var(--surface);border-color:var(--ok)}\n.opt.wrong{border-color:var(--bad);background:var(--bad-soft)} .opt.wrong .k{background:var(--bad);color:var(--surface);border-color:var(--bad)}\n.opt:disabled{cursor:default}\n.fb{border-left:4px solid var(--ok);background:var(--ok-soft);padding:12px 16px;border-radius:0 10px 10px 0}\n.fb.bad{border-color:var(--bad);background:var(--bad-soft)}\n.fb strong{display:block;margin-bottom:2px}\n.actions{display:flex;gap:10px;flex-wrap:wrap}\n.score{font-family:var(--display);font-weight:800;font-size:64px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}\n.review{display:flex;flex-direction:column;gap:12px;padding:0;margin:0;list-style:none}\n.review li{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}\n.review .mark{flex:none;font-family:var(--mono);font-weight:500;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--surface)}\n.review .mark.ok{background:var(--ok)} .review .mark.no{background:var(--bad)}\n.review p{margin:0} .review small{color:var(--muted);font-size:14px}\n.tip{font-size:14px;color:var(--muted)}\n.rank-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}\n.tablebox{overflow-x:auto}\ntable{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}\nth{text-align:left;font-family:var(--mono);font-weight:500;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0 10px 8px;border-bottom:1px solid var(--line)}\ntd{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}\ntd.nm{font-weight:600;min-width:0;word-break:break-word}\n.pos{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;font-family:var(--mono);font-weight:500;font-size:14px;border:1px solid var(--line)}\ntr.p1 .pos{background:var(--warn);border-color:var(--warn);color:var(--surface)}\ntr.p2 .pos,tr.p3 .pos{background:var(--accent-soft);border-color:var(--accent)}\ntr.me td{background:var(--accent-soft)}\n.you{font-family:var(--mono);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-left:6px}\n.hits{display:flex;align-items:center;gap:8px;white-space:nowrap}\n.dots{display:flex;gap:3px}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line)}.dots i.on{background:var(--ok)}\ntd.dt{color:var(--muted);font-size:14px;white-space:nowrap}\n.saved{font-size:14px;color:var(--muted)}\n@media (max-width:480px){.hide-sm{display:none}.dots{display:none}}\nfooter{font-size:13px;color:var(--muted);text-align:center}\n@media (prefers-reduced-motion:reduce){*{transition:none!important}}\n</style>\n</head>\n<body>\n\n<div class=\"wrap\">\n  <header>\n    <span class=\"eyebrow\">UNAMA Rio Branco · Projeto EJA</span>\n    <h1>Crimes Virtuais e Cidadania Digital</h1>\n    <p class=\"sub\">Informação também é proteção. Responda às 5 questões sobre segurança na internet e veja na hora se acertou, com o comentário de cada resposta.</p>\n  </header>\n  <main id=\"app\"></main>\n  <section class=\"card\" id=\"rank\" aria-labelledby=\"rank-h\">\n    <div class=\"rank-head\"><h2 id=\"rank-h\">Ranking da turma</h2><span class=\"tip\" id=\"rank-info\">Carregando…</span></div>\n    <div class=\"tablebox\"><table>\n      <thead><tr><th scope=\"col\">Pos.</th><th scope=\"col\">Aluno(a)</th><th scope=\"col\">Acertos</th><th scope=\"col\" class=\"hide-sm\">Data</th></tr></thead>\n      <tbody id=\"rank-body\"></tbody>\n    </table></div>\n    <p class=\"tip\" id=\"rank-empty\" hidden>Ninguém terminou o simulado ainda. O primeiro resultado aparece aqui assim que alguém concluir.</p>\n  </section>\n  <footer>Curso de Direito — Atividades Práticas Interdisciplinares de Extensão II</footer>\n</div>\n\n<script>\nconst MODO=\"api\";\nconst Q=[\n {t:\"Conceito e impacto dos crimes virtuais\",s:\"Crimes virtuais são golpes e fraudes que acontecem na internet, redes sociais e aplicativos.\",q:\"Quais são as principais consequências que esses atos podem causar às vítimas?\",\n  o:[\"Apenas a perda física e imediata do aparelho celular.\",\"Prejuízos financeiros, exposição de dados pessoais e problemas emocionais.\",\"Suspensão automática do contrato de energia elétrica da residência.\",\"Aplicação imediata de multas de trânsito pela autoridade policial.\"],a:1,\n  c:\"Os crimes virtuais atingem as vítimas em várias dimensões: prejuízos financeiros diretos, comprometimento de dados sigilosos e forte impacto emocional ou psicológico.\"},\n {t:\"Prevenção e boas práticas\",s:\"Para navegar com segurança, recomenda-se adotar hábitos preventivos.\",q:\"Qual opção representa uma atitude INCORRETA e de alto risco?\",\n  o:[\"Utilizar senhas fortes e exclusivas para cada serviço ou aplicativo.\",\"Desconfiar de ofertas ou promoções que parecem vantajosas demais para ser verdade.\",\"Compartilhar dados pessoais e senhas em links recebidos para garantir brindes.\",\"Ativar a verificação em duas etapas nas redes sociais e aplicativos de mensagem.\"],a:2,\n  c:\"Nunca compartilhe dados pessoais, senhas ou códigos de confirmação em links suspeitos. Proteger seus dados é uma das principais formas de evitar clonagens e golpes.\"},\n {t:\"Legislação e direitos na internet\",s:\"O Marco Civil da Internet (Lei nº 12.965/2014) é um marco regulatório fundamental no Brasil.\",q:\"Qual é o papel central dessa lei no contexto da cidadania digital?\",\n  o:[\"Fixar os preços máximos cobrados pelas operadoras de telefonia e internet móvel.\",\"Garantir os direitos dos usuários e estabelecer os princípios e regras para o uso da rede no país.\",\"Proibir o acesso de pessoas maiores de 18 anos às redes sociais no período noturno.\",\"Criar delegacias físicas obrigatórias em todos os bairros das cidades brasileiras.\"],a:1,\n  c:\"A Lei nº 12.965/2014 assegura direitos, deveres e garantias para os usuários da rede no Brasil, promovendo o uso ético e seguro do meio digital.\"},\n {t:\"Exercício da cidadania digital\",s:\"Cidadania digital envolve a atuação do indivíduo no ambiente virtual.\",q:\"Qual alternativa melhor descreve essa conduta?\",\n  o:[\"Navegar sem restrições, ignorando princípios éticos ou a privacidade alheia.\",\"Utilizar a internet de forma consciente, responsável, ética e segura para promover um ambiente saudável.\",\"Delegar integralmente às empresas de tecnologia a responsabilidade sobre a segurança pessoal.\",\"Usar o anonimato como justificativa para praticar ofensas ou divulgar informações falsas.\"],a:1,\n  c:\"Cidadania digital é o exercício ativo do respeito, da ética, da responsabilidade e do cuidado no ambiente virtual, protegendo a si mesmo e aos outros.\"},\n {t:\"Principais golpes virtuais\",s:\"Com o avanço da tecnologia, surgiram diversos tipos de fraudes no ambiente virtual.\",q:\"Qual alternativa apresenta apenas golpes e fraudes digitais?\",\n  o:[\"Falso Pix, Clonagem de WhatsApp, Falsos Anúncios e Roubo de Dados Pessoais.\",\"Adulteração mecânica de caixa eletrônico bancário presencial.\",\"Sequestro relâmpago efetuado em vias públicas.\",\"Envio de cartas físicas impressas contendo prêmios de loteria internacional.\"],a:0,\n  c:\"Falso Pix, clonagem de WhatsApp, anúncios fraudulentos e captura de dados pessoais são exemplos clássicos de crimes estritamente virtuais.\"}\n];\nconst L=\"ABCD\";\nlet st={name:\"\",i:0,ans:[],picked:null,checked:false};\nconst app=document.getElementById(\"app\");\nconst esc=s=>s.replace(/[&<>\"]/g,c=>({\"&\":\"&amp;\",\"<\":\"&lt;\",\">\":\"&gt;\",'\"':\"&quot;\"}[c]));\n\nfunction start(){\n  app.innerHTML=`<section class=\"card\">\n    <h2>Antes de começar</h2>\n    <p class=\"stem\">Digite seu nome para aparecer no resultado final. São 5 questões de múltipla escolha.</p>\n    <label class=\"f\" for=\"nome\">Nome do aluno(a)</label>\n    <input type=\"text\" id=\"nome\" autocomplete=\"name\" placeholder=\"Ex.: Maria da Silva\" value=\"${esc(st.name)}\">\n    <button class=\"btn\" id=\"go\">Começar simulado</button>\n  </section>`;\n  const n=document.getElementById(\"nome\");\n  n.addEventListener(\"keydown\",e=>{if(e.key===\"Enter\")go()});\n  document.getElementById(\"go\").onclick=go;\n  function go(){const v=n.value.trim().replace(/\\s+/g,\" \").slice(0,60);\n    if(v.length<2){n.focus();n.setAttribute(\"aria-invalid\",\"true\");n.placeholder=\"Digite seu nome para entrar no ranking\";return}\n    st.name=v;st.i=0;st.ans=[];st.picked=null;st.checked=false;question()}\n}\nfunction rail(){return `<div class=\"rail\" aria-hidden=\"true\">${Q.map((_,k)=>{\n  if(k<st.ans.length)return `<span class=\"${st.ans[k]===Q[k].a?\"done-ok\":\"done-bad\"}\"></span>`;\n  return `<span class=\"${k===st.i?\"cur\":\"\"}\"></span>`}).join(\"\")}</div>`}\nfunction question(){\n  const q=Q[st.i];\n  app.innerHTML=`<section class=\"card\">\n    ${rail()}\n    <div class=\"qmeta\"><span>Questão ${st.i+1} de ${Q.length}</span><span>${esc(q.t)}</span></div>\n    <p class=\"stem\">${esc(q.s)}</p>\n    <h2>${esc(q.q)}</h2>\n    <div class=\"opts\" role=\"radiogroup\">${q.o.map((o,k)=>`<button class=\"opt\" role=\"radio\" aria-checked=\"false\" data-k=\"${k}\"><span class=\"k\">${L[k]}</span><span>${esc(o)}</span></button>`).join(\"\")}</div>\n    <div id=\"fb\"></div>\n    <div class=\"actions\"><button class=\"btn\" id=\"act\" disabled>Confirmar resposta</button></div>\n  </section>`;\n  const opts=[...app.querySelectorAll(\".opt\")],act=document.getElementById(\"act\");\n  opts.forEach(b=>b.onclick=()=>{if(st.checked)return;st.picked=+b.dataset.k;\n    opts.forEach(x=>{x.classList.toggle(\"sel\",x===b);x.setAttribute(\"aria-checked\",x===b)});act.disabled=false});\n  act.onclick=()=>{\n    if(!st.checked){\n      st.checked=true;st.ans.push(st.picked);const ok=st.picked===q.a;\n      opts.forEach((x,k)=>{x.disabled=true;x.classList.remove(\"sel\");if(k===q.a)x.classList.add(\"right\");else if(k===st.picked)x.classList.add(\"wrong\")});\n      document.getElementById(\"fb\").innerHTML=`<div class=\"fb ${ok?\"\":\"bad\"}\" role=\"status\"><strong>${ok?\"Você acertou!\":\"Resposta incorreta. A certa é a letra \"+L[q.a]+\".\"}</strong>${esc(q.c)}</div>`;\n      app.querySelector(\".rail\").outerHTML=rail();\n      act.textContent=st.i<Q.length-1?\"Próxima questão\":\"Ver meu resultado\";act.focus();\n    }else{st.i++;st.picked=null;st.checked=false;st.i<Q.length?question():result()}\n  };\n}\nfunction result(){\n  const hits=st.ans.filter((a,k)=>a===Q[k].a).length;\n  const msg=hits===5?\"Excelente! Você domina o assunto e está preparado para se proteger na internet.\":hits>=3?\"Muito bem! Revise as questões que errou para reforçar sua proteção.\":\"Vale a pena revisar o conteúdo. Leia os comentários abaixo com atenção.\";\n  const d=new Date().toLocaleDateString(\"pt-BR\");\n  app.innerHTML=`<section class=\"card\">\n    ${rail()}\n    <span class=\"eyebrow\">Resultado ${st.name?\"de \"+esc(st.name):\"\"} · ${d}</span>\n    <div class=\"score\">${hits}/${Q.length}</div>\n    <p class=\"stem\">${msg}</p>\n    <ul class=\"review\">${Q.map((q,k)=>{const ok=st.ans[k]===q.a;return `<li><span class=\"mark ${ok?\"ok\":\"no\"}\">${ok?\"✓\":\"✗\"}</span><div><p><strong>${k+1}. ${esc(q.t)}</strong></p><small>Sua resposta: ${L[st.ans[k]]} · Correta: ${L[q.a]}</small><p class=\"tip\">${esc(q.c)}</p></div></li>`}).join(\"\")}</ul>\n    <p class=\"saved\" id=\"saved\" role=\"status\">Enviando seu resultado para o ranking…</p>\n    <div class=\"actions\"><button class=\"btn\" id=\"again\">Refazer simulado</button><button class=\"btn ghost\" id=\"other\">Novo aluno</button></div>\n  </section>`;\n  document.getElementById(\"again\").onclick=()=>{st.i=0;st.ans=[];st.picked=null;st.checked=false;question()};\n  document.getElementById(\"other\").onclick=()=>{st.name=\"\";start()};\n  const rec={nome:st.name,acertos:hits,total:Q.length,data:Date.now()};\n  Store.save(rec).then(ok=>{\n    const el=document.getElementById(\"saved\");if(!el)return;\n    el.textContent=ok?\"Seu resultado entrou no ranking da turma.\":\"Não foi possível registrar no ranking. Avise o professor para conferir o acesso à página.\";\n    if(ok){mine=rec.nome.toLowerCase();local.push(rec);draw()}\n  });\n}\n\n/* ---------- Ranking ---------- */\nlet all=[],local=[],mine=\"\";\nconst fmt=t=>new Date(t).toLocaleDateString(\"pt-BR\",{day:\"2-digit\",month:\"2-digit\"})+\" \"+new Date(t).toLocaleTimeString(\"pt-BR\",{hour:\"2-digit\",minute:\"2-digit\"});\nfunction draw(){\n  const best=new Map();\n  for(const r of all.concat(local)){\n    if(!r||typeof r.nome!==\"string\")continue;\n    const a=Math.max(0,Math.min(Q.length,+r.acertos||0)),k=r.nome.trim().toLowerCase();if(!k)continue;\n    const cur=best.get(k);\n    if(!cur||a>cur.acertos||(a===cur.acertos&&r.data<cur.data))best.set(k,{nome:r.nome.trim(),acertos:a,data:+r.data||0});\n  }\n  const rows=[...best.values()].sort((x,y)=>y.acertos-x.acertos||x.data-y.data);\n  const body=document.getElementById(\"rank-body\");\n  document.getElementById(\"rank-empty\").hidden=rows.length>0;\n  document.getElementById(\"rank-info\").textContent=rows.length?`${rows.length} aluno${rows.length>1?\"s\":\"\"} · melhor tentativa de cada um`:\"\";\n  let pos=0,prev=null;\n  body.innerHTML=rows.map((r,i)=>{if(r.acertos!==prev){pos=i+1;prev=r.acertos}\n    const me=mine&&r.nome.toLowerCase()===mine;\n    return `<tr class=\"${pos<=3?\"p\"+pos:\"\"} ${me?\"me\":\"\"}\"><td><span class=\"pos\">${pos}º</span></td><td class=\"nm\">${esc(r.nome)}${me?'<span class=\"you\">você</span>':\"\"}</td><td><span class=\"hits\"><strong>${r.acertos}/${Q.length}</strong><span class=\"dots\" aria-hidden=\"true\">${Q.map((_,j)=>`<i class=\"${j<r.acertos?\"on\":\"\"}\"></i>`).join(\"\")}</span></span></td><td class=\"dt hide-sm\">${r.data?fmt(r.data):\"\"}</td></tr>`}).join(\"\");\n}\nconst Store=MODO===\"api\"?{\n  async init(){const load=async()=>{try{const r=await fetch(\"/api/resultados\",{cache:\"no-store\"});if(r.ok){all=await r.json();\n      local=local.filter(l=>!all.some(a=>a.nome===l.nome&&a.data===l.data));draw()}}catch(e){document.getElementById(\"rank-info\").textContent=\"Sem conexão com o ranking\"}};\n    await load();setInterval(load,15000)},\n  async save(rec){try{const r=await fetch(\"/api/resultados\",{method:\"POST\",headers:{\"content-type\":\"application/json\"},body:JSON.stringify(rec)});return r.ok}catch(e){return false}}\n}:{\n  col:null,\n  async init(){\n    let db=null;try{db=window.claude?await window.claude.use(\"db\"):null}catch(e){}\n    if(!db){document.getElementById(\"rank-info\").textContent=\"Ranking indisponível nesta visualização\";draw();return}\n    this.col=db.collection(\"resultados\");\n    this.col.limit(500).onSnapshot(s=>{all=s.docs.map(d=>d.data());local=[];draw()},()=>{document.getElementById(\"rank-info\").textContent=\"Ranking indisponível no momento\"});\n  },\n  async save(rec){if(!this.col)return false;try{await this.col.add(rec);return true}catch(e){return false}}\n};\ndraw();Store.init();\nstart();\n</script>\n</body>\n</html>\n";
+// Simulado: Crimes Virtuais e Cidadania Digital — Cloudflare Worker
+// Banco: D1 (binding DB). Senha do administrador: secret ADMIN_SENHA.
+import PAGINA from "./pagina.html";
+import { QUESTOES_PADRAO } from "./questoes-padrao.js";
 
-const json = (d, s = 200) => new Response(JSON.stringify(d), {
-  status: s, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
-});
+const LIMITES = { questoes: 50, alternativas: 6, nome: 60 };
+const CACHE_RANKING = "https://cache.interno/ranking";
+
+const json = (dados, status = 200) =>
+  new Response(JSON.stringify(dados), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
+  });
+
+const erro = (mensagem, status = 400) => json({ erro: mensagem }, status);
+
+async function lerQuestoes(env) {
+  const linha = await env.DB.prepare("SELECT valor, atualizado_em FROM config WHERE chave = 'questoes'").first();
+  if (linha) {
+    try { return { questoes: JSON.parse(linha.valor), versao: linha.atualizado_em }; } catch (e) {}
+  }
+  return { questoes: QUESTOES_PADRAO, versao: 0 };
+}
+
+function validarQuestoes(lista) {
+  if (!Array.isArray(lista) || lista.length < 1) return "Cadastre pelo menos 1 questão.";
+  if (lista.length > LIMITES.questoes) return `O limite é de ${LIMITES.questoes} questões.`;
+  const texto = (v, max) => typeof v === "string" && v.trim().length <= max;
+  for (let i = 0; i < lista.length; i++) {
+    const q = lista[i], n = i + 1;
+    if (!q || typeof q !== "object") return `Questão ${n} inválida.`;
+    if (!texto(q.pergunta, 600) || !q.pergunta.trim()) return `Questão ${n}: escreva a pergunta.`;
+    if (!texto(q.tema ?? "", 80)) return `Questão ${n}: o tema pode ter até 80 caracteres.`;
+    if (!texto(q.contexto ?? "", 600)) return `Questão ${n}: o texto de apoio pode ter até 600 caracteres.`;
+    if (!texto(q.comentario ?? "", 800)) return `Questão ${n}: o comentário pode ter até 800 caracteres.`;
+    const alts = q.alternativas;
+    if (!Array.isArray(alts) || alts.length < 2 || alts.length > LIMITES.alternativas)
+      return `Questão ${n}: use de 2 a ${LIMITES.alternativas} alternativas.`;
+    for (const a of alts) if (!texto(a, 300) || !a.trim()) return `Questão ${n}: preencha todas as alternativas.`;
+    if (!Number.isInteger(q.correta) || q.correta < 0 || q.correta >= alts.length)
+      return `Questão ${n}: marque a alternativa correta.`;
+  }
+  return null;
+}
+
+const limparQuestoes = (lista) =>
+  lista.map((q) => ({
+    tema: (q.tema || "").trim(),
+    contexto: (q.contexto || "").trim(),
+    pergunta: q.pergunta.trim(),
+    alternativas: q.alternativas.map((a) => a.trim()),
+    correta: q.correta,
+    comentario: (q.comentario || "").trim()
+  }));
+
+async function hash(texto) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function ehAdmin(req, env) {
+  const recebida = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!recebida) return false;
+  const ok = (await hash(recebida)) === (await hash(env.ADMIN_SENHA));
+  if (!ok) await new Promise((r) => setTimeout(r, 600));
+  return ok;
+}
+
+async function montarRanking(env) {
+  const { results } = await env.DB.prepare(
+    "SELECT nome, acertos, total, criado_em FROM resultados ORDER BY criado_em LIMIT 5000"
+  ).all();
+  const melhor = new Map();
+  for (const r of results) {
+    const chave = r.nome.trim().toLowerCase();
+    const atual = melhor.get(chave);
+    const nota = r.total ? r.acertos / r.total : 0;
+    const notaAtual = atual ? atual.acertos / atual.total : -1;
+    if (!atual || nota > notaAtual || (nota === notaAtual && r.acertos > atual.acertos)) melhor.set(chave, r);
+  }
+  return [...melhor.values()]
+    .sort((a, b) => b.acertos / b.total - a.acertos / a.total || b.acertos - a.acertos || a.criado_em - b.criado_em)
+    .map((r) => ({ nome: r.nome, acertos: r.acertos, total: r.total, data: r.criado_em }));
+}
+
+const limparCacheRanking = () => caches.default.delete(CACHE_RANKING).catch(() => {});
+
+async function pagina(env) {
+  const dados = await lerQuestoes(env);
+  const seguro = JSON.stringify(dados).replace(/</g, "\\u003c").replace(/[\u2028\u2029]/g, " ");
+  return new Response(PAGINA.replace('"__DADOS__"', seguro), {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "same-origin"
+    }
+  });
+}
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     const url = new URL(req.url);
-    if (url.pathname === "/api/resultados") {
-      if (!env.RESULTADOS) return json({ erro: "KV RESULTADOS não configurado" }, 500);
-      if (req.method === "GET") {
-        const out = [];
-        let cursor;
-        do {
-          const r = await env.RESULTADOS.list({ prefix: "r:", cursor });
-          for (const k of r.keys) if (k.metadata) out.push(k.metadata);
-          cursor = r.list_complete ? null : r.cursor;
-        } while (cursor);
-        return json(out);
+    const caminho = url.pathname.replace(/\/+$/, "") || "/";
+    const metodo = req.method;
+
+    try {
+      // ---------- Público ----------
+      if (caminho === "/api/ranking" && metodo === "GET") {
+        const cache = caches.default;
+        const emCache = await cache.match(CACHE_RANKING);
+        if (emCache) return emCache;
+        const resp = new Response(JSON.stringify(await montarRanking(env)), {
+          headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=8" }
+        });
+        ctx.waitUntil(cache.put(CACHE_RANKING, resp.clone()));
+        return resp;
       }
-      if (req.method === "POST") {
-        const b = await req.json().catch(() => null);
-        const nome = typeof b?.nome === "string" ? b.nome.trim().replace(/\s+/g, " ").slice(0, 60) : "";
-        const acertos = Number(b?.acertos);
-        if (nome.length < 2 || !Number.isInteger(acertos) || acertos < 0 || acertos > 5)
-          return json({ erro: "Dados inválidos" }, 400);
-        const m = { nome, acertos, total: 5, data: Date.now() };
-        await env.RESULTADOS.put("r:" + m.data + "-" + crypto.randomUUID().slice(0, 8), "1", { metadata: m });
-        return json(m, 201);
+
+      if (caminho === "/api/resultados" && metodo === "POST") {
+        const corpo = await req.json().catch(() => null);
+        const nome = typeof corpo?.nome === "string" ? corpo.nome.trim().replace(/\s+/g, " ").slice(0, LIMITES.nome) : "";
+        if (nome.length < 2) return erro("Digite um nome com pelo menos 2 letras.");
+        const { questoes, versao } = await lerQuestoes(env);
+        if (Number(corpo?.versao) !== versao)
+          return erro("As questões foram atualizadas pelo professor. Recarregue a página e refaça o simulado.", 409);
+        const respostas = Array.isArray(corpo?.respostas) ? corpo.respostas : [];
+        if (respostas.length !== questoes.length) return erro("Responda todas as questões.");
+        const acertos = questoes.reduce((s, q, i) => s + (respostas[i] === q.correta ? 1 : 0), 0);
+        await env.DB.prepare("INSERT INTO resultados (nome, acertos, total, criado_em) VALUES (?, ?, ?, ?)")
+          .bind(nome, acertos, questoes.length, Date.now()).run();
+        ctx.waitUntil(limparCacheRanking());
+        return json({ acertos, total: questoes.length }, 201);
       }
-      return json({ erro: "Método não permitido" }, 405);
+
+      // ---------- Administrador ----------
+      if (caminho.startsWith("/api/admin")) {
+        if (!env.ADMIN_SENHA) return erro("A senha de administrador ainda não foi configurada no Cloudflare (secret ADMIN_SENHA).", 503);
+        if (!(await ehAdmin(req, env))) return erro("Senha incorreta.", 401);
+
+        if (caminho === "/api/admin/entrar" && metodo === "POST") return json({ ok: true });
+
+        if (caminho === "/api/admin/resultados" && metodo === "GET") {
+          const { results } = await env.DB.prepare(
+            "SELECT id, nome, acertos, total, criado_em AS data FROM resultados ORDER BY criado_em DESC LIMIT 5000"
+          ).all();
+          return json(results);
+        }
+        if (caminho === "/api/admin/resultados" && metodo === "DELETE") {
+          const r = await env.DB.prepare("DELETE FROM resultados").run();
+          ctx.waitUntil(limparCacheRanking());
+          return json({ apagados: r.meta.changes });
+        }
+        const m = caminho.match(/^\/api\/admin\/resultados\/(\d+)$/);
+        if (m && metodo === "DELETE") {
+          const r = await env.DB.prepare("DELETE FROM resultados WHERE id = ?").bind(Number(m[1])).run();
+          ctx.waitUntil(limparCacheRanking());
+          return json({ apagados: r.meta.changes });
+        }
+
+        if (caminho === "/api/admin/questoes" && metodo === "GET") return json(await lerQuestoes(env));
+        if (caminho === "/api/admin/questoes" && metodo === "PUT") {
+          const corpo = await req.json().catch(() => null);
+          const problema = validarQuestoes(corpo?.questoes);
+          if (problema) return erro(problema);
+          const versao = Date.now();
+          await env.DB.prepare(
+            "INSERT INTO config (chave, valor, atualizado_em) VALUES ('questoes', ?, ?) ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor, atualizado_em = excluded.atualizado_em"
+          ).bind(JSON.stringify(limparQuestoes(corpo.questoes)), versao).run();
+          return json(await lerQuestoes(env));
+        }
+        if (caminho === "/api/admin/questoes/restaurar" && metodo === "POST") {
+          await env.DB.prepare("DELETE FROM config WHERE chave = 'questoes'").run();
+          return json(await lerQuestoes(env));
+        }
+        return erro("Rota não encontrada.", 404);
+      }
+
+      if (caminho.startsWith("/api/")) return erro("Rota não encontrada.", 404);
+      if (metodo !== "GET" && metodo !== "HEAD") return erro("Método não permitido.", 405);
+      return pagina(env);
+    } catch (e) {
+      return erro("Erro no servidor. Tente de novo em instantes.", 500);
     }
-    return new Response(HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
   }
 };

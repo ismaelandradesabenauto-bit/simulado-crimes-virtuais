@@ -2,6 +2,11 @@ name = "simulado-crimes-virtuais"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
-[[kv_namespaces]]
-binding = "RESULTADOS"
-id = "196f6ed575a74910b239287f7a43adf0"
+# Banco com os resultados e as questões editadas pelo administrador
+[[d1_databases]]
+binding = "DB"
+database_name = "simulado-crimes-virtuais"
+database_id = "cd9d4ef4-fb58-4c08-b08c-ea26d0c310d7"
+
+# A senha do painel /admin NÃO fica aqui: configure o secret ADMIN_SENHA no painel do Cloudflare
+# (Worker → Settings → Variables and Secrets → Add → tipo Secret).
