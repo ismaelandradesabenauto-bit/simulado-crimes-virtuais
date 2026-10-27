@@ -1,0 +1,7 @@
+name = "simulado-crimes-virtuais"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[[kv_namespaces]]
+binding = "RESULTADOS"
+id = "196f6ed575a74910b239287f7a43adf0"
